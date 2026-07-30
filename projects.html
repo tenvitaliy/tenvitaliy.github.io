@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitaliy Ten | Projects</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(17, 24, 39, 0.4);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(231, 76, 60, 0.1), transparent 25%);
+            background-attachment: fixed;
+            padding: 4rem 2rem;
+        }
+
+        .projects-section {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Кнопка возврата на главную */
+        .back-home {
+            display: inline-flex;
+            align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-home:hover {
+            color: var(--text-main);
+        }
+
+        .back-home svg {
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .back-home:hover svg {
+            transform: translateX(-4px);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+        }
+
+        /* Дизайн карточки проекта */
+        .project-card {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.3);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .card-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; top: 0;
+            background: linear-gradient(to bottom, transparent 20%, #0b0f19 100%);
+        }
+
+        .card-content {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            position: relative;
+            z-index: 2;
+            margin-top: -30px;
+        }
+
+        .project-category {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+        }
+
+        /* Блоки с языками внутри карточки */
+        .lang-block {
+            margin-bottom: 1.2rem;
+        }
+
+        .lang-badge-small {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+
+        .project-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .project-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .project-link:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .project-link svg {
+            margin-left: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .project-link:hover svg {
+            transform: translateX(4px);
+        }
+
+        @media (max-width: 768px) {
+            .section-header h2 { font-size: 2.2rem; }
+            .projects-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="projects-section">
+        <!-- Ссылка назад на главную -->
+        <a href="index.html" class="back-home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back to Home / 메인으로 돌아가기
+        </a>
+
+        <div class="section-header">
+            <h2>My Projects</h2>
+            <p>Practice, passion for coding, and a desire to build useful tools.</p>
+        </div>
+
+        <div class="projects-grid">
+            
+            <!-- ПРОЕКТ 1: WebArch -->
+            <div class="project-card">
+                <div class="card-image" style="background-image: url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');"></div>
+                <div class="card-content">
+                    <span class="project-category">Learning / Frontend</span>
+                    <h3 class="project-title">WebArch</h3>
+                    
+                    <!-- Английский текст -->
+                    <div class="lang-block">
+                        <span class="lang-badge-small">English</span>
+                        <p class="project-desc">
+                            Diving into web technologies and vibe-coding, I wanted to create a platform that lowers the entry barrier for beginners. WebArch is an interactive environment where learning basic programming skills is intuitive and fun.
+                        </p>
+                    </div>
+
+                    <!-- Корейский текст -->
+                    <div class="lang-block">
+                        <span class="lang-badge-small">한국어</span>
+                        <p class="project-desc">
+                            웹 기술과 바이브 코딩 개념에 빠져들면서, 초보자들이 개발에 쉽게 진입할 수 있는 플랫폼을 만들고 싶었습니다. WebArch는 기본 프로그래밍 기술을 직관적이고 재미있게 익힐 수 있는 인터랙티브 학습 공간입니다.
+                        </p>
+                    </div>
+
+                    <!-- ⚠️ МЕСТО ДЛЯ ТВОЕЙ ССЫЛКИ НА WEBARCH -->
+                    <!-- Замени "webarch.html" или "#" на путь к твоему сайту WebArch -->
+                    <a href="webarch.html" class="project-link" target="_blank">
+                        View Project / 프로젝트 보기
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- ПРОЕКТ 2: EduTracker (Сайт для учебы) -->
+            <div class="project-card">
+                <div class="card-image" style="background-image: url('ed.jpg');"></div>
+                <div class="card-content">
+                    <span class="project-category">Productivity</span>
+                    <h3 class="project-title">EduTracker</h3>
+                    
+                    <!-- Английский текст -->
+                    <div class="lang-block">
+                        <span class="lang-badge-small">English</span>
+                        <p class="project-desc">
+                            High school requires strict discipline and organization. To structure my studies, track deadlines, and keep my mind clear, I built this hub. It brings together features tailored for my routine so no task gets lost.
+                        </p>
+                    </div>
+
+                    <!-- Корейский текст -->
+                    <div class="lang-block">
+                        <span class="lang-badge-small">한국어</span>
+                        <p class="project-desc">
+                            고등학교 생활에는 철저한 자기 관리와 계획성이 필요합니다. 학업 일정을 체계적으로 관리하고, 마감일을 놓치지 않으며, 효율적으로 공부하기 위해 직접 이 허브를 개발했습니다.
+                        </p>
+                    </div>
+
+                    <!-- ИСПРАВЛЕННАЯ ССЫЛКА НА ТВОЙ САЙТ -->
+                    <a href="study.html" class="project-link" target="_blank">
+                        View Project / 프로젝트 보기
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
+                </div>
+            </div>
+            <!-- ПРОЕКТ 3: Micro-Dota Arena -->
+            <div class="project-card">
+                <div class="card-image" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');"></div>
+                <div class="card-content">
+                    <span class="project-category">Gamedev / Web Game</span>
+                    <h3 class="project-title">Micro-Dota Arena</h3>
+                    
+                    <!-- Английский текст -->
+                    <div class="lang-block">
+                        <span class="lang-badge-small">English</span>
+                        <p class="project-desc">
+                            Dota 2 is the ultimate competitive game for me. During coding breaks, I decided to fulfill a childhood dream: building a 2D arena game where strategy, mechanics, and stats matter more than mindless grinding.
+                        </p>
+                    </div>
+
+                    <!-- Корейский текст -->
+                    <div class="lang-block">
+                        <span class="lang-badge-small">한국어</span>
+                        <p class="project-desc">
+                            도타 2(Dota 2)는 저에게 최고의 경쟁 게임입니다. 코딩 휴식 시간에 어릴 적 꿈을 실현하기로 마음먹고, 전략, 메카닉, 그리고 스탯 분배가 중요한 2D 아레나 게임을 구현했습니다.
+                        </p>
+                    </div>
+
+                    <!-- ⚠️ МЕСТО ДЛЯ ТВОЕЙ ССЫЛКИ НА ИГРУ -->
+                    <!-- Замени "dota.html" или "#" на путь к твоему файлу игры -->
+                    <a href="micro-dota_2 (2).html" class="project-link" target="_blank">
+                        View Project / 프로젝트 보기
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+</body>
+</html>

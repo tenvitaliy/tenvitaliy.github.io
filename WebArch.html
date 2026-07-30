@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Architecture | Interactive Masterclass</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ================= CSS VARIABLES & THEMING ================= */
+        :root[data-theme="light"] {
+            --bg-main: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.7);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4f46e5;
+            --primary-glow: rgba(79, 70, 229, 0.3);
+            --border: rgba(0, 0, 0, 0.1);
+            --code-bg: #1e1e1e;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --particle: rgba(79, 70, 229, 0.2);
+        }
+
+        :root[data-theme="dark"] {
+            --bg-main: #0b0f19;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --border: rgba(255, 255, 255, 0.1);
+            --code-bg: #0d1117;
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --particle: rgba(99, 102, 241, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            transition: background-color 0.5s ease, color 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 5px; }
+
+        /* ================= BACKGROUND CANVAS ================= */
+        #network-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* ================= NAVBAR & PROGRESS ================= */
+        nav {
+            position: fixed;
+            top: 0; width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .nav-brand span { color: var(--primary); }
+
+        .nav-controls { display: flex; align-items: center; gap: 1.5rem; }
+
+        .progress-container {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.9rem; font-weight: 600; color: var(--text-muted);
+        }
+        .progress-bar {
+            width: 150px; height: 8px;
+            background: var(--border);
+            border-radius: 4px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; width: 0%;
+            background: var(--primary);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-toggle {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text-main); padding: 8px 12px;
+            border-radius: 8px; cursor: pointer; font-weight: 600;
+            transition: 0.3s;
+        }
+        .theme-toggle:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* ================= HERO SECTION ================= */
+        header {
+            padding: 10rem 2rem 5rem;
+            text-align: center;
+            max-width: 800px; margin: 0 auto;
+        }
+
+        header h1 {
+            font-size: 4rem; font-weight: 800;
+            letter-spacing: -2px; line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, var(--text-main), var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        header p { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 3rem; }
+
+        /* ================= TABS ================= */
+        .tabs-container {
+            display: flex; justify-content: center; gap: 1rem;
+            margin-bottom: 4rem;
+        }
+
+        .tab-btn {
+            padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--border);
+            background: var(--bg-card); color: var(--text-muted);
+            border-radius: 12px; backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover { border-color: var(--primary); color: var(--text-main); }
+        .tab-btn.active {
+            background: var(--primary); color: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        /* ================= CARDS & CONTENT ================= */
+        .guide-section { display: none; max-width: 1200px; margin: 0 auto 5rem; padding: 0 1.5rem; }
+        .guide-section.active { display: block; animation: fadeIn 0.5s ease forwards; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Scroll Reveal Class */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.6s cubic-bezier(0.5, 0, 0, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        .lesson-card {
+            background: var(--bg-card);
+            border-radius: 16px; border: 1px solid var(--border);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            margin-bottom: 3rem; overflow: hidden;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+        }
+
+        .lesson-header {
+            padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .lesson-title-area h2 { font-size: 1.4rem; color: var(--text-main); }
+        .lesson-title-area p { color: var(--text-muted); font-size: 0.95rem; margin-top: 5px; }
+
+        .complete-btn {
+            background: transparent; border: 2px solid var(--border);
+            color: var(--text-muted); padding: 8px 16px;
+            border-radius: 20px; font-weight: 600; cursor: pointer;
+            transition: 0.3s; font-size: 0.85rem;
+        }
+        .complete-btn.done {
+            background: #10b981; border-color: #10b981; color: white;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .lesson-body { display: grid; grid-template-columns: 1fr 1fr; min-height: 220px; }
+
+        /* ================= CODE UI ================= */
+        .code-container {
+            background: var(--code-bg); display: flex; flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+        .mac-header {
+            display: flex; gap: 8px; padding: 1rem;
+            background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .mac-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .mac-dot.red { background: #ff5f56; } .mac-dot.yellow { background: #ffbd2e; } .mac-dot.green { background: #27c93f; }
+
+        .code-block {
+            padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+            overflow-x: auto; color: #e2e8f0; line-height: 1.6;
+        }
+
+        /* Syntax Highlighting */
+        .c-t { color: #569cd6; } /* Tag */
+        .c-a { color: #9cdcfe; } /* Attribute */
+        .c-s { color: #ce9178; } /* String */
+        .c-k { color: #c586c0; } /* Keyword */
+        .c-n { color: #b5cea8; } /* Number */
+
+        .code-select {
+            background: rgba(255,255,255,0.1); color: #9cdcfe;
+            border: 1px dashed rgba(255,255,255,0.3); padding: 2px 6px;
+            font-family: inherit; border-radius: 4px; cursor: pointer; outline: none;
+        }
+
+        /* ================= PREVIEW UI ================= */
+        .preview-block {
+            padding: 2.5rem; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; position: relative;
+            background: rgba(128, 128, 128, 0.05);
+        }
+        .preview-label {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        /* Demo Elements */
+        .btn-demo { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-demo:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--primary-glow); }
+        .input-demo { padding: 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 8px; width: 100%; max-width: 250px; outline: none; font-family: inherit;}
+
+        footer { text-align: center; padding: 3rem; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 5rem; }
+
+        @media (max-width: 900px) {
+            .lesson-body { grid-template-columns: 1fr; }
+            .preview-block { border-top: 1px solid var(--border); border-right: none; min-height: 200px; }
+            header h1 { font-size: 2.8rem; }
+            .nav-controls { gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- OOP Canvas Background -->
+    <canvas id="network-canvas"></canvas>
+
+    <!-- Navigation & State -->
+    <nav>
+        <div class="nav-brand">Web<span>Arch</span></div>
+        <div class="nav-controls">
+            <div class="progress-container">
+                <span id="progress-text">0/30</span>
+                <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">☀️ Theme</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header>
+        <h1>Engineering the Web</h1>
+        <p>An interactive, state-driven masterclass exploring the structural, stylistic, and logical layers of modern web architecture. Modify parameters and observe real-time DOM updates.</p>
+    </header>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('html')">HTML Layer</button>
+        <button class="tab-btn" onclick="switchTab('css')">CSS Layer</button>
+        <button class="tab-btn" onclick="switchTab('js')">JS Layer</button>
+    </div>
+
+    <!-- Sections (Injected by JS to keep code clean and DRY) -->
+    <div id="html-section" class="guide-section active"></div>
+    <div id="css-section" class="guide-section"></div>
+    <div id="js-section" class="guide-section"></div>
+
+    <footer>
+        <p>Built with Vanilla JS, OOP & Intersection Observer APIs.</p>
+        <p>Developed for University Application by <b>Ten Vitaliy</b> &copy; 2026</p>
+    </footer>
+
+    <script>
+        // ==========================================
+        // 1. DATA ARCHITECTURE (30 Lessons)
+        // ==========================================
+        const data = {
+            html: [
+                { title: "Semantic Tags", desc: "Using proper tags (h1, header, main) helps SEO and accessibility.", code: `&lt;<span class="c-t">h1</span>&gt;Main Title&lt;/<span class="c-t">h1</span>&gt;\n&lt;<span class="c-t">h2</span>&gt;Subtitle&lt;/<span class="c-t">h2</span>&gt;`, preview: `<h1 style="margin:0">Main Title</h1><h2 style="margin:0; opacity:0.8">Subtitle</h2>` },
+                { title: "Anchor Links", desc: "The foundational element of the web. Connects documents via 'href'.", code: `&lt;<span class="c-t">a</span> <span class="c-a">href</span>=<span class="c-s">"/home"</span>&gt;Go Home&lt;/<span class="c-t">a</span>&gt;`, preview: `<a href="#" style="color:var(--primary); font-weight:bold; text-decoration:none; font-size:1.2rem;">Go Home ➔</a>` },
+                { title: "Image Rendering", desc: "Embeds media. Always use 'alt' attributes for screen readers.", code: `&lt;<span class="c-t">img</span> <span class="c-a">src</span>=<span class="c-s">"logo.svg"</span> <span class="c-a">alt</span>=<span class="c-s">"Logo"</span>&gt;`, preview: `<div style="width:60px; height:60px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">IMG</div>` },
+                { title: "Form Inputs", desc: "Collects user data. Different 'types' trigger different browser UIs.", code: `&lt;<span class="c-t">input</span> <span class="c-a">type</span>=<span class="c-s">"password"</span>&gt;`, preview: `<input type="password" class="input-demo" placeholder="Enter password...">` },
+                { title: "Action Buttons", desc: "Triggers events or submits forms to a backend server.", code: `&lt;<span class="c-t">button</span>&gt;Execute&lt;/<span class="c-t">button</span>&gt;`, preview: `<button class="btn-demo">Execute Process</button>` },
+                { title: "Unordered Lists", desc: "Structures related items without enforcing a sequence.", code: `&lt;<span class="c-t">ul</span>&gt;\n  &lt;<span class="c-t">li</span>&gt;Node.js&lt;/<span class="c-t">li</span>&gt;\n  &lt;<span class="c-t">li</span>&gt;React&lt;/<span class="c-t">li</span>&gt;\n&lt;/<span class="c-t">ul</span>&gt;`, preview: `<ul style="font-weight:600; padding-left:20px;"><li>Node.js</li><li>React</li></ul>` },
+                { title: "Ordered Lists", desc: "Structures data where sequence matters.", code: `&lt;<span class="c-t">ol</span>&gt;\n  &lt;<span class="c-t">li</span>&gt;Compile&lt;/<span class="c-t">li</span>&gt;\n  &lt;<span class="c-t">li</span>&gt;Deploy&lt;/<span class="c-t">li</span>&gt;\n&lt;/<span class="c-t">ol</span>&gt;`, preview: `<ol style="font-weight:600; padding-left:20px;"><li>Compile</li><li>Deploy</li></ol>` },
+                { title: "Block Containers", desc: "Divs act as wrappers to group elements for CSS layout engines.", code: `&lt;<span class="c-t">div</span> <span class="c-a">class</span>=<span class="c-s">"wrapper"</span>&gt;...&lt;/<span class="c-t">div</span>&gt;`, preview: `<div style="border:2px dashed var(--text-muted); padding:20px; border-radius:8px;">Container Content</div>` },
+                { title: "Inline Spans", desc: "Wraps text without breaking the line to apply targeted styling.", code: `&lt;<span class="c-t">p</span>&gt;Price: &lt;<span class="c-t">span</span>&gt;$99&lt;/<span class="c-t">span</span>&gt;&lt;/<span class="c-t">p</span>&gt;`, preview: `<p style="font-size:1.2rem">Price: <span style="color:var(--primary); font-weight:bold;">$99</span></p>` },
+                { title: "Checkboxes", desc: "Boolean input type for multi-select data points.", code: `&lt;<span class="c-t">input</span> <span class="c-a">type</span>=<span class="c-s">"checkbox"</span>&gt; Accept`, preview: `<label style="font-size:1.1rem; cursor:pointer;"><input type="checkbox" style="transform:scale(1.5); margin-right:10px;"> Accept Terms</label>` }
+            ],
+            css: [
+                { title: "Color Theory", desc: "Adjusts foreground text color.", prop: "color", target: "c1", val: "#6366f1", opts: ["#6366f1", "#10b981", "#f43f5e"], code: `.<span class="c-t">element</span> {\n  <span class="c-a">color</span>: <select class="code-select css-trigger" data-t="c1" data-p="color"></select>;\n}`, preview: `<h2 id="c1" style="color:#6366f1; transition:0.3s">Dynamic Text</h2>` },
+                { title: "Backgrounds", desc: "Paints the element's box model background.", prop: "backgroundColor", target: "c2", val: "#6366f1", opts: ["#6366f1", "#f59e0b", "#333333"], code: `.<span class="c-t">box</span> {\n  <span class="c-a">background</span>: <select class="code-select css-trigger" data-t="c2" data-p="backgroundColor"></select>;\n}`, preview: `<div id="c2" style="width:100px; height:100px; background:#6366f1; border-radius:12px; transition:0.3s"></div>` },
+                { title: "Border Radius", desc: "Manipulates corner geometry.", prop: "borderRadius", target: "c3", val: "0px", opts: ["0px", "16px", "50%"], code: `.<span class="c-t">shape</span> {\n  <span class="c-a">border-radius</span>: <select class="code-select css-trigger" data-t="c3" data-p="borderRadius"></select>;\n}`, preview: `<div id="c3" style="width:100px; height:100px; background:var(--text-main); transition:0.4s"></div>` },
+                { title: "Typography Scale", desc: "Updates relative font size (rem).", prop: "fontSize", target: "c4", val: "1rem", opts: ["1rem", "1.5rem", "2rem"], code: `.<span class="c-t">text</span> {\n  <span class="c-a">font-size</span>: <select class="code-select css-trigger" data-t="c4" data-p="fontSize"></select>;\n}`, preview: `<p id="c4" style="font-size:1rem; font-weight:700; transition:0.3s; margin:0">Scale Me</p>` },
+                { title: "Flexbox: Justify", desc: "Distributes space along the main axis.", prop: "justifyContent", target: "c5", val: "flex-start", opts: ["flex-start", "center", "space-between"], code: `.<span class="c-t">container</span> {\n  <span class="c-a">display</span>: flex;\n  <span class="c-a">justify-content</span>: <select class="code-select css-trigger" data-t="c5" data-p="justifyContent"></select>;\n}`, preview: `<div id="c5" style="display:flex; justify-content:flex-start; width:100%; border:1px solid var(--border); padding:10px; border-radius:8px; gap:10px; transition:0.3s"><div style="width:40px;height:40px;background:var(--primary);border-radius:4px"></div><div style="width:40px;height:40px;background:var(--text-main);border-radius:4px"></div></div>` },
+                { title: "Flexbox: Align", desc: "Aligns items along the cross axis.", prop: "alignItems", target: "c6", val: "flex-start", opts: ["flex-start", "center", "flex-end"], code: `.<span class="c-t">container</span> {\n  <span class="c-a">align-items</span>: <select class="code-select css-trigger" data-t="c6" data-p="alignItems"></select>;\n}`, preview: `<div id="c6" style="display:flex; align-items:flex-start; justify-content:center; width:100%; height:120px; border:1px solid var(--border); padding:10px; gap:10px; transition:0.3s"><div style="width:40px;height:40px;background:var(--primary);border-radius:4px"></div><div style="width:40px;height:80px;background:var(--text-main);border-radius:4px"></div></div>` },
+                { title: "Box Shadows", desc: "Adds Z-axis depth using shadows.", prop: "boxShadow", target: "c7", val: "none", opts: ["none", "0px 10px 20px rgba(0,0,0,0.5)"], code: `.<span class="c-t">card</span> {\n  <span class="c-a">box-shadow</span>: <select class="code-select css-trigger" data-t="c7" data-p="boxShadow"></select>;\n}`, preview: `<div id="c7" style="width:100px; height:100px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; transition:0.3s"></div>` },
+                { title: "Opacity", desc: "Controls alpha channel transparency.", prop: "opacity", target: "c8", val: "1", opts: ["1", "0.5", "0"], code: `.<span class="c-t">ghost</span> {\n  <span class="c-a">opacity</span>: <select class="code-select css-trigger" data-t="c8" data-p="opacity"></select>;\n}`, preview: `<div id="c8" style="width:100px; height:100px; background:var(--primary); border-radius:50%; transition:0.3s"></div>` },
+                { title: "Transform: Scale", desc: "Uses GPU acceleration to resize elements.", prop: "transform", target: "c9", val: "scale(1)", opts: ["scale(1)", "scale(1.2)", "scale(0.8)"], code: `.<span class="c-t">btn</span> {\n  <span class="c-a">transform</span>: <select class="code-select css-trigger" data-t="c9" data-p="transform"></select>;\n}`, preview: `<button id="c9" class="btn-demo" style="transition:0.3s">Hover Me</button>` },
+                { title: "Text Transform", desc: "CSS engine alters text casing dynamically.", prop: "textTransform", target: "c10", val: "none", opts: ["none", "uppercase", "lowercase"], code: `.<span class="c-t">string</span> {\n  <span class="c-a">text-transform</span>: <select class="code-select css-trigger" data-t="c10" data-p="textTransform"></select>;\n}`, preview: `<h2 id="c10" style="margin:0; transition:0.3s">Web Architecture</h2>` }
+            ],
+            js: [
+                { title: "DOM Querying", desc: "Selects an element from the Document Object Model.", code: `<span class="c-k">const</span> el = document.querySelector(<span class="c-s">'#txt'</span>);\nel.style.color = <span class="c-s">'#10b981'</span>;`, preview: `<h3 id="j1" style="margin:0">Target Me</h3><button class="btn-demo" style="margin-top:15px; padding:8px 16px" onclick="document.getElementById('j1').style.color='#10b981'">Run Query</button>` },
+                { title: "Event Listeners", desc: "Attaches a function to fire on user interaction.", code: `btn.addEventListener(<span class="c-s">'click'</span>, () => {\n  count++;\n});`, preview: `<button class="btn-demo" id="j2">Clicks: 0</button>`, init: `let c=0; document.getElementById('j2').onclick=function(){c++;this.textContent='Clicks: '+c}` },
+                { title: "State Updates", desc: "Binding HTML text content to a JavaScript variable.", code: `input.addEventListener(<span class="c-s">'input'</span>, (e) => {\n  display.textContent = e.target.value;\n});`, preview: `<input type="text" id="j3-in" class="input-demo" placeholder="Type here..."><h3 id="j3-out" style="margin-top:15px; color:var(--primary); min-height:28px">...</h3>`, init: `document.getElementById('j3-in').addEventListener('input', e => document.getElementById('j3-out').textContent = e.target.value)` },
+                { title: "Class Toggling", desc: "The optimal way to change UI states (e.g., Dark Mode).", code: `el.classList.toggle(<span class="c-s">'active'</span>);`, preview: `<div id="j4" style="width:80px; height:80px; background:var(--text-muted); transition:0.3s; border-radius:8px"></div><button class="btn-demo" style="margin-top:15px; padding:8px 16px" onclick="let d=document.getElementById('j4'); d.style.background = d.style.background==='var(--primary)' ? 'var(--text-muted)' : 'var(--primary)'; d.style.transform = d.style.transform==='rotate(45deg)' ? 'rotate(0)' : 'rotate(45deg)';">Toggle</button>` },
+                { title: "Element Creation", desc: "Constructing and injecting new DOM nodes dynamically.", code: `<span class="c-k">let</span> node = document.createElement(<span class="c-s">'div'</span>);\ndocument.body.appendChild(node);`, preview: `<div id="j5" style="display:flex; gap:5px; flex-wrap:wrap; min-height:30px; margin-bottom:15px; width:100%"></div><button class="btn-demo" style="padding:8px 16px" onclick="let d=document.createElement('div'); d.style.cssText='width:20px;height:20px;background:var(--primary);border-radius:50%'; document.getElementById('j5').appendChild(d);">Mount Node</button>` },
+                { title: "Conditionals (If/Else)", desc: "Branching logic based on boolean evaluations.", code: `<span class="c-k">if</span> (engine.status === <span class="c-k">true</span>) {\n  start();\n} <span class="c-k">else</span> {\n  stop();\n}`, preview: `<button class="btn-demo" id="j6" style="background:#ef4444">System Offline</button>`, init: `let b=document.getElementById('j6'); b.onclick=function(){ if(this.textContent.includes('Offline')){this.textContent='System Online'; this.style.background='#10b981'}else{this.textContent='System Offline'; this.style.background='#ef4444'} }` },
+                { title: "Arrays & Math", desc: "Accessing random indices using the Math API.", code: `<span class="c-k">let</span> arr = [<span class="c-s">'A'</span>,<span class="c-s">'B'</span>,<span class="c-s">'C'</span>];\n<span class="c-k">let</span> item = arr[Math.floor(Math.random()*<span class="c-n">3</span>)];`, preview: `<h1 id="j7" style="margin:0; font-size:3rem">?</h1><button class="btn-demo" style="margin-top:15px; padding:8px 16px" onclick="const a=['🚀','⚡','🔥','💻','💡']; document.getElementById('j7').textContent=a[Math.floor(Math.random()*a.length)]">Randomize</button>` },
+                { title: "Asynchronous Timers", desc: "Executing logic off the main thread queue after a delay.", code: `setTimeout(() => {\n  executePayload();\n}, <span class="c-n">1500</span>);`, preview: `<button class="btn-demo" id="j8" onclick="let b=this; b.textContent='Processing...'; b.style.opacity=0.7; setTimeout(()=>{b.textContent='Resolved!'; b.style.opacity=1; b.style.background='#10b981'}, 1500)">Init Timer</button>` },
+                { title: "Intervals", desc: "Running cyclic logic until explicitly cleared.", code: `setInterval(() => {\n  clock.tick();\n}, <span class="c-n">1000</span>);`, preview: `<h2 id="j9" style="margin:0; font-variant-numeric: tabular-nums;">0</h2><button class="btn-demo" style="margin-top:15px; padding:8px 16px" onclick="if(this.timer) clearInterval(this.timer); let c=0; this.timer=setInterval(()=>document.getElementById('j9').textContent=++c, 100)">Start Loop</button>` },
+                { title: "Fetch API (Networking)", desc: "Requesting external JSON data asynchronously.", code: `fetch(<span class="c-s">'/api/user'</span>)\n  .then(res => res.json())\n  .then(data => render(data));`, preview: `<p id="j10" style="font-weight:600">Awaiting Request...</p><button class="btn-demo" style="padding:8px 16px" onclick="let p=document.getElementById('j10'); p.textContent='Fetching...'; setTimeout(()=>p.innerHTML='Status: <span style=\\'color:#10b981\\'>200 OK</span>', 800)">Send GET</button>` }
+            ]
+        };
+
+        // ==========================================
+        // 2. RENDER ENGINE & STATE MANAGEMENT
+        // ==========================================
+        let completedLessons = 0;
+        const totalLessons = 30;
+
+        function updateProgress() {
+            document.getElementById('progress-text').textContent = `${completedLessons}/${totalLessons}`;
+            document.getElementById('progress-fill').style.width = `${(completedLessons / totalLessons) * 100}%`;
+        }
+
+        function renderSection(id, categoryData, isCSS = false, isJS = false) {
+            const container = document.getElementById(id);
+            let html = '';
+
+            categoryData.forEach((item, index) => {
+                let codeStr = item.code;
+                
+                // Inject CSS Selectors dynamically
+                if (isCSS && item.opts) {
+                    const optsHtml = item.opts.map(o => `<option value="${o}">${o}</option>`).join('');
+                    codeStr = codeStr.replace('></select>', `>${optsHtml}</select>`);
+                }
+
+                html += `
+                <div class="lesson-card reveal">
+                    <div class="lesson-header">
+                        <div class="lesson-title-area">
+                            <h2>${index + 1}. ${item.title}</h2>
+                            <p>${item.desc}</p>
+                        </div>
+                        <button class="complete-btn" onclick="toggleComplete(this)">Mark Complete</button>
+                    </div>
+                    <div class="lesson-body">
+                        <div class="code-container">
+                            <div class="mac-header"><div class="mac-dot red"></div><div class="mac-dot yellow"></div><div class="mac-dot green"></div></div>
+                            <div class="code-block"><pre>${codeStr}</pre></div>
+                        </div>
+                        <div class="preview-block">
+                            <div class="preview-label">Live Output</div>
+                            ${item.preview}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+
+            // Bind CSS Listeners
+            if (isCSS) {
+                container.querySelectorAll('.css-trigger').forEach(select => {
+                    // Set default
+                    const lesson = categoryData.find(l => l.target === select.getAttribute('data-t'));
+                    select.value = lesson.val;
+                    // Event
+                    select.addEventListener('change', (e) => {
+                        document.getElementById(e.target.getAttribute('data-t')).style[e.target.getAttribute('data-p')] = e.target.value;
+                    });
+                });
+            }
+
+            // Run JS initializers
+            if (isJS) {
+                categoryData.forEach(item => { if (item.init) new Function(item.init)(); });
+            }
+        }
+
+        renderSection('html-section', data.html);
+        renderSection('css-section', data.css, true, false);
+        renderSection('js-section', data.js, false, true);
+
+        // State Action
+        window.toggleComplete = function(btn) {
+            if (btn.classList.contains('done')) {
+                btn.classList.remove('done');
+                btn.textContent = 'Mark Complete';
+                completedLessons--;
+            } else {
+                btn.classList.add('done');
+                btn.innerHTML = '&#10003; Completed';
+                completedLessons++;
+            }
+            updateProgress();
+        };
+
+        // ==========================================
+        // 3. UI INTERACTIONS
+        // ==========================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.guide-section').forEach(s => s.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId + '-section').classList.add('active');
+            
+            // Re-trigger scroll observer for new tab elements
+            setTimeout(initScrollObserver, 50); 
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.setAttribute('data-theme', 'light');
+                document.querySelector('.theme-toggle').innerHTML = '🌙 Theme';
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                document.querySelector('.theme-toggle').innerHTML = '☀️ Theme';
+            }
+            resizeCanvas(); // Re-grab CSS variable colors for canvas
+        }
+
+        // Intersection Observer for Scroll Animations
+        function initScrollObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target); // Only animate once
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        }
+        initScrollObserver();
+
+        // ==========================================
+        // 4. OOP CANVAS BACKGROUND (Matrix Network)
+        // ==========================================
+        const canvas = document.getElementById('network-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 150 };
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
+        window.addEventListener('resize', resizeCanvas);
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        }
+
+        class Particle {
+            constructor(x, y, dx, dy, size) {
+                this.x = x; this.y = y;
+                this.dx = dx; this.dy = dy;
+                this.size = size;
+                this.baseX = x; this.baseY = y;
+            }
+            draw() {
+                // Get current color from CSS vars
+                const color = getComputedStyle(document.documentElement).getPropertyValue('--particle').trim() || 'rgba(99, 102, 241, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+            update() {
+                // Bounce off edges
+                if (this.x > canvas.width || this.x < 0) this.dx = -this.dx;
+                if (this.y > canvas.height || this.y < 0) this.dy = -this.dy;
+
+                // Mouse interaction
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    const force = (mouse.radius - distance) / mouse.radius;
+                    this.x -= dx * force * 0.03;
+                    this.y -= dy * force * 0.03;
+                } else {
+                    // Return to base slightly
+                    this.x += this.dx;
+                    this.y += this.dy;
+                }
+                this.draw();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            let count = (canvas.width * canvas.height) / 15000; // Density
+            for (let i = 0; i < count; i++) {
+                let size = Math.random() * 2 + 1;
+                let x = Math.random() * innerWidth;
+                let y = Math.random() * innerHeight;
+                let dx = (Math.random() - 0.5) * 1;
+                let dy = (Math.random() - 0.5) * 1;
+                particles.push(new Particle(x, y, dx, dy, size));
+            }
+        }
+
+        function animateParticles() {
+            requestAnimationFrame(animateParticles);
+            ctx.clearRect(0, 0, innerWidth, innerHeight);
+            
+            const color = getComputedStyle(document.documentElement).getPropertyValue('--particle').trim();
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                // Connect particles
+                for (let j = i; j < particles.length; j++) {
+                    let dx = particles[i].x - particles[j].x;
+                    let dy = particles[i].y - particles[j].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = color.replace(/[\d.]+\)$/g, `${1 - dist/120})`); // Fade opacity based on distance
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // Start
+        resizeCanvas();
+        animateParticles();
+    </script>
+</body>
+</html>

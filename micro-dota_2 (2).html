@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Микро-Dota 2 - Обновленная версия</title>
+    <style>
+        body { margin: 0; background: #0a0a0a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; user-select: none; }
+        #gameCanvas { background: #1a221b; cursor: default; display: none; }
+        
+        .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 20; backdrop-filter: blur(5px); }
+        .hidden { display: none !important; }
+        button { background: linear-gradient(180deg, #b92b27, #1565C0); color: white; border: 2px solid #fff; padding: 15px 40px; font-size: 22px; cursor: pointer; margin: 10px; text-transform: uppercase; font-weight: bold; border-radius: 5px; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        button:hover { transform: scale(1.05); filter: brightness(1.2); }
+        
+        .hero-cards { display: flex; gap: 25px; margin-top: 30px; }
+        .hero-card { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border: 2px solid #555; border-radius: 10px; padding: 25px; text-align: center; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 200px; }
+        .hero-card:hover { border-color: #ffd700; transform: translateY(-10px); box-shadow: 0 10px 25px rgba(255, 215, 0, 0.2); }
+        .hero-img { width: 100%; border-radius: 5px; margin-bottom: 15px; border: 1px solid #444; }
+        
+        #ui { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(0deg, #111, #222); border-top: 3px solid #ffd700; display: none; padding: 10px 20px; box-sizing: border-box; justify-content: space-between; align-items: flex-end; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); z-index: 5;}
+        .stats, .shop { display: flex; flex-direction: column; gap: 6px; font-size: 16px; text-shadow: 1px 1px 2px black; }
+        .center-ui { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        
+        .skills { display: flex; gap: 15px; }
+        .skill { width: 60px; height: 60px; background: #333; border: 2px solid #777; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); cursor: pointer;}
+        .skill .cd { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: #ffd700; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 6px; opacity: 0; pointer-events: none;}
+        .skill.active-target { border-color: #ffd700; box-shadow: 0 0 15px #ffd700; animation: pulse 1s infinite; }
+        
+        #inventory { display: flex; justify-content: center; background: #1a1a1a; padding: 5px; border-radius: 5px; border: 2px solid #444; width: 60px; height: 60px; position: relative; }
+        #inventorySlot { width: 100%; height: 100%; background-size: cover; background-position: center; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 10px; text-align: center; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        .shop-btn { background: linear-gradient(180deg, #f1c40f, #d35400); color: white; border: 1px solid #fff; padding: 6px 12px; cursor: pointer; font-weight: bold; border-radius: 5px; text-shadow: 1px 1px 1px black; }
+        .shop-btn:hover { filter: brightness(1.2); transform: scale(1.02); }
+        
+        #goldDisplay { color: #ffd700; font-size: 22px; font-weight: bold; }
+        #kdaDisplay { position: absolute; top: 15px; right: 20px; font-size: 24px; font-weight: bold; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; border: 2px solid #555; text-shadow: 1px 1px 2px #000; z-index: 5; display: none; }
+        
+        #gameTimerDisplay { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 28px; font-weight: bold; background: rgba(0,0,0,0.85); color: #ffd700; padding: 6px 25px; border-radius: 0 0 10px 10px; border: 2px solid #444; border-top: none; text-shadow: 0 0 8px #ffd700; z-index: 5; display: none; letter-spacing: 2px; }
+
+        #respawnOverlay { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); background: rgba(180, 0, 0, 0.35); border: 2px solid #e74c3c; padding: 15px 30px; border-radius: 10px; text-align: center; backdrop-filter: blur(4px); z-index: 10; display: none; box-shadow: 0 0 20px rgba(231, 76, 60, 0.5); }
+        #respawnTimerText { font-size: 28px; font-weight: bold; color: #ffffff; text-shadow: 0 0 10px #ff0000; }
+
+        #enemyInfoContainer { position: absolute; top: 15px; left: 20px; z-index: 5; display: none; flex-direction: column; gap: 10px; width: 250px; }
+        #enemyInfoBtn { background: linear-gradient(180deg, #8e44ad, #2980b9); border: 2px solid #fff; color: white; padding: 10px 15px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 0; }
+        #enemyInfoBtn:hover { transform: scale(1.02); filter: brightness(1.2); }
+        #enemyStatsPanel { background: rgba(20, 20, 20, 0.9); border: 2px solid #c0392b; border-radius: 8px; padding: 15px; display: none; color: white; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.7); }
+    </style>
+</head>
+<body>
+
+    <div id="mainMenu" class="screen">
+        <h1 style="font-size: 60px; color: #fff; text-shadow: 0 0 20px #e74c3c, 0 0 40px #c0392b; margin-bottom: 50px;">DOTA 2 <br><span style="font-size:30px; color:#ffd700;">(2D EDITION)</span></h1>
+        <button onclick="showHeroSelect()">Начать игру</button>
+    </div>
+
+    <div id="heroSelect" class="screen hidden">
+        <h2 style="font-size: 36px; color: white; text-shadow: 0 0 10px #3498db;">ВЫБЕРИТЕ ГЕРОЯ</h2>
+        <div class="hero-cards">
+            <div class="hero-card" onclick="startGame('pudge')">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png" class="hero-img">
+                <h3 style="color: #2ecc71; text-shadow: 0 0 5px #27ae60; font-size: 24px; margin-top:0;">PUDGE</h3>
+                <p style="color:#aaa;">Q: Hook | W: Rot<br>R: Dismember</p>
+            </div>
+            <div class="hero-card" onclick="startGame('lion')">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/lion.png" class="hero-img">
+                <h3 style="color: #e74c3c; text-shadow: 0 0 5px #c0392b; font-size: 24px; margin-top:0;">LION</h3>
+                <p style="color:#aaa;">Q: Spike | W: Hex<br>R: Finger of Death</p>
+            </div>
+            <div class="hero-card" onclick="startGame('juggernaut')">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/juggernaut.png" class="hero-img">
+                <h3 style="color: #f1c40f; text-shadow: 0 0 5px #d35400; font-size: 24px; margin-top:0;">JUGGERNAUT</h3>
+                <p style="color:#aaa;">Q: Spin | W: Heal<br>R: Omnislash</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOver" class="screen hidden">
+        <h1 id="winnerText" style="font-size: 60px; text-shadow: 0 0 20px #fff;"></h1>
+        <button onclick="location.reload()">В главное меню</button>
+    </div>
+
+    <div id="gameTimerDisplay">00:00</div>
+
+    <div id="respawnOverlay">
+        <div>ВЫ МЕРТВЫ (В ТАВЕРНЕ)</div>
+        <div id="respawnTimerText">ВОЗРОЖДЕНИЕ ЧЕРЕЗ: 5 СЕК</div>
+    </div>
+
+    <div id="kdaDisplay">
+        <span style="color: #2ecc71;">K</span> / <span style="color: #e74c3c;">D</span> / <span style="color: #f39c12;">A</span> : 
+        <span id="kdaText">0 / 0 / 0</span>
+    </div>
+
+    <div id="enemyInfoContainer">
+        <button id="enemyInfoBtn" onclick="toggleEnemyStats()">🔍 Инфо о враге</button>
+        <div id="enemyStatsPanel">
+            <div style="font-weight: bold; margin-bottom: 8px; color: #ffd700; border-bottom: 1px solid #555; padding-bottom: 5px;">Статистика бота</div>
+            <div id="enemyKdaText" style="margin-bottom: 8px; font-weight: bold; color: #e74c3c;">K/D/A: 0 / 0 / 0</div>
+            <div id="enemySwordText" style="margin-bottom: 5px;">⚔️ Меч: Ур. 0</div>
+            <div id="enemyShieldText">🛡️ Щит: Ур. 0</div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <div class="stats">
+            <div id="hpDisplay" style="color: #ff4c4c; font-weight: bold; font-size: 20px;">HP: 100/100</div>
+            <div id="manaDisplay" style="color: #3498db; font-weight: bold; font-size: 20px;">MP: 100/100</div>
+            <div id="goldDisplay">💰 0</div>
+            <div id="statsDisplay" style="color:#ccc;">Урон: 10 | Броня: 0</div>
+        </div>
+        
+        <div class="center-ui">
+            <div class="skills">
+                <div class="skill" id="ui-q" onclick="prepareSkill('q')">Q<div class="cd" id="cd-q"></div></div>
+                <div class="skill" id="ui-w" onclick="prepareSkill('w')">W<div class="cd" id="cd-w"></div></div>
+                <div class="skill" id="ui-e" onclick="prepareSkill('e')">E<div class="cd" id="cd-e"></div></div>
+                <div class="skill" id="ui-r" onclick="prepareSkill('r')">R<div class="cd" id="cd-r"></div></div>
+            </div>
+            <div id="inventory">
+                <div id="inventorySlot">ИНВ</div>
+            </div>
+        </div>
+
+        <div class="shop">
+            <div style="font-weight:bold; text-align:center; color:#ffd700; margin-bottom: 5px;">ПРОКАЧКА</div>
+            <button class="shop-btn" onclick="buyItem('sword')">⚔️ Меч: <span id="swordLvlText">Ур. 0</span></button>
+            <button class="shop-btn" onclick="buyItem('shield')">🛡️ Щит: <span id="shieldLvlText">Ур. 0</span></button>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - 100;
+
+    let gameActive = false;
+    let matchTime = 0; 
+    let entities = [];
+    let particles = [];
+    let itemsOnGround = [];
+    let trees = [];
+    let player, bot, playerTower, botTower, roshanEntity;
+    let lastTime = 0;
+    let creepTimer = 0;
+    let roshanTimer = 180; 
+    let activeSkill = null;
+    let teamCreepBuff = { 1: 1, 2: 1 };
+
+    const IMAGES = {
+        pudge: new Image(),
+        lion: new Image(),
+        juggernaut: new Image(),
+        aegis: new Image()
+    };
+    IMAGES.pudge.src = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png';
+    IMAGES.lion.src = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/lion.png';
+    IMAGES.juggernaut.src = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/juggernaut.png';
+    IMAGES.aegis.src = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/aegis.png';
+
+    window.addEventListener('contextmenu', e => e.preventDefault());
+    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight - 100; });
+
+    function showHeroSelect() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('heroSelect').classList.remove('hidden');
+    }
+    
+    function toggleEnemyStats() {
+        let panel = document.getElementById('enemyStatsPanel');
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function generateTrees() {
+        trees = [];
+        for (let i = 0; i < 160; i++) {
+            let tx = Math.random() * canvas.width;
+            let ty = Math.random() * canvas.height;
+            if (ty > canvas.height/2 - 100 && ty < canvas.height/2 + 100) continue; 
+            if (tx > canvas.width/2 - 200 && tx < canvas.width/2 + 200 && ty > canvas.height - 250) continue;
+            trees.push({ x: tx, y: ty, r: 16 + Math.random()*12, color: `rgb(${15 + Math.random()*20}, ${45 + Math.random()*30}, ${20 + Math.random()*15})` });
+        }
+    }
+
+    function drawMap(ctx) {
+        ctx.fillStyle = '#1e301d';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let gradTop = ctx.createLinearGradient(0, 0, 0, 200);
+        gradTop.addColorStop(0, '#0c160c'); gradTop.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradTop; ctx.fillRect(0,0,canvas.width, 200);
+
+        let gradBot = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - 200);
+        gradBot.addColorStop(0, '#0c160c'); gradBot.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradBot; ctx.fillRect(0, canvas.height - 200, canvas.width, 200);
+
+        // Река
+        ctx.fillStyle = '#1a3c40';
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2 - 180, 0);
+        ctx.quadraticCurveTo(canvas.width / 2, canvas.height / 2, canvas.width / 2 - 180, canvas.height);
+        ctx.lineTo(canvas.width / 2 - 70, canvas.height);
+        ctx.quadraticCurveTo(canvas.width / 2 + 110, canvas.height / 2, canvas.width / 2 - 70, 0);
+        ctx.fill();
+
+        ctx.strokeStyle = '#2d5a27'; ctx.lineWidth = 6; ctx.stroke();
+
+        // Логово Рошана (Roshan Pit)
+        let pitX = canvas.width / 2, pitY = canvas.height - 90, pitR = 140;
+        ctx.fillStyle = '#181210';
+        ctx.beginPath();
+        ctx.arc(pitX, pitY, pitR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#4a3222'; ctx.lineWidth = 8; ctx.stroke();
+
+        if(!roshanEntity) {
+            ctx.fillStyle = 'rgba(255,215,0,0.15)';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ЛОГОВО РОШАНА', pitX, pitY + 5);
+        }
+
+        trees.forEach(t => {
+            ctx.fillStyle = '#081008'; ctx.beginPath(); ctx.arc(t.x+4, t.y+4, t.r, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = t.color; ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI*2); ctx.fill();
+        });
+    }
+
+    class Entity {
+        constructor(x, y, team, radius, color) {
+            this.x = x; this.y = y; this.team = team; this.radius = radius; this.color = color;
+            this.hp = 100; this.maxHp = 100; this.speed = 0; this.damage = 10; this.armor = 0;
+            this.attackRange = 50; this.attackCooldown = 1.0; this.attackTimer = 0;
+            this.targetMove = null; this.targetAttack = null;
+            this.isHexed = false; this.hexTimer = 0; this.dead = false; this.isReincarnating = false;
+            this.facing = 0;
+            this.damageTracker = new Map();
+            entities.push(this);
+        }
+
+        takeDamage(amt, source) {
+            if (this.dead || this.isReincarnating) return;
+            let actualDamage = Math.max(1, amt - this.armor);
+            this.hp -= actualDamage;
+
+            if (this.isHero && source && source.isHero) {
+                let currentDmg = this.damageTracker.get(source) || 0;
+                this.damageTracker.set(source, currentDmg + actualDamage);
+            }
+
+            if (this.hp <= 0) {
+                if (this.isHero && this.inventory === 'aegis') {
+                    this.inventory = null;
+                    this.isReincarnating = true;
+                    this.reincarnationTimer = 4.0;
+                    this.hp = 0; 
+                    particles.push({type: 'aegis_revive', x: this.x, y: this.y, life: 4.0, maxLife: 4.0});
+                    if(this === player) {
+                        document.getElementById('inventorySlot').style.backgroundImage = 'none';
+                        document.getElementById('inventorySlot').innerText = 'ПУСТО';
+                    }
+                } else {
+                    this.die(source);
+                }
+            }
+        }
+
+        die(source) {
+            this.dead = true;
+            if (this.isHero) {
+                this.deaths++;
+                let calculatedTime = 5 + Math.floor(matchTime / 30) + (this.swordLvl + this.shieldLvl);
+                this.respawnTimer = Math.max(5, calculatedTime);
+                
+                let enemyWorth = 150 + (this.swordLvl * 50) + (this.shieldLvl * 50);
+                let killerIsHero = source && source.isHero && source.team !== this.team;
+                
+                if (killerIsHero) {
+                    source.kills++; source.gold += enemyWorth;
+                    if (source === player) particles.push({type: 'text', text: `+${enemyWorth}g`, x: this.x, y: this.y, life: 1.5, maxLife: 1.5, color: '#ffd700'});
+                }
+
+                let enemyHeroes = entities.filter(e => e.isHero && e.team !== this.team);
+                for (let enemy of enemyHeroes) {
+                    if (enemy === source) continue;
+                    let dmgDone = this.damageTracker.get(enemy) || 0;
+                    if (dmgDone >= this.maxHp * 0.35) {
+                        enemy.assists++;
+                        let assistGold = Math.floor(enemyWorth * Math.min(1, dmgDone / this.maxHp));
+                        enemy.gold += assistGold;
+                        if (enemy === player) particles.push({type: 'text', text: `+${assistGold}g (Ассист)`, x: this.x, y: this.y - 20, life: 1.5, maxLife: 1.5, color: '#f39c12'});
+                    }
+                }
+            } else if (this.isCreep && source && source.isHero && source.team !== this.team) {
+                source.gold += 50; 
+                if (source === player) particles.push({type: 'text', text: '+50g', x: this.x, y: this.y, life: 1, maxLife: 1, color: '#ffd700'});
+            }
+        }
+
+        update(dt) {
+            if (this.isReincarnating) return;
+
+            if (this.isHexed) {
+                this.hexTimer -= dt;
+                if (this.hexTimer <= 0) this.isHexed = false;
+            }
+            if (this.attackTimer > 0) this.attackTimer -= dt;
+
+            if (this.targetMove && !this.isHexed) {
+                let dx = this.targetMove.x - this.x; let dy = this.targetMove.y - this.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist > 5) {
+                    this.x += (dx / dist) * this.speed * dt; this.y += (dy / dist) * this.speed * dt;
+                    this.facing = Math.atan2(dy, dx);
+                } else { this.targetMove = null; }
+            }
+
+            if (this.targetAttack && !this.isHexed) {
+                if (this.targetAttack.dead || this.targetAttack.isReincarnating) { this.targetAttack = null; return; }
+                let dx = this.targetAttack.x - this.x; let dy = this.targetAttack.y - this.y;
+                let dist = Math.hypot(dx, dy);
+                this.facing = Math.atan2(dy, dx);
+
+                if (dist <= this.attackRange) {
+                    this.targetMove = null;
+                    if (this.attackTimer <= 0) {
+                        this.targetAttack.takeDamage(this.damage, this);
+                        particles.push({type: 'line', x1: this.x, y1: this.y, x2: this.targetAttack.x, y2: this.targetAttack.y, life: 0.15, maxLife: 0.15, color: this.isRoshan ? '#f39c12' : '#ecf0f1', width: this.isRoshan ? 4 : 2});
+                        this.attackTimer = this.attackCooldown;
+                    }
+                } else {
+                    this.targetMove = { x: this.targetAttack.x, y: this.targetAttack.y };
+                }
+            }
+        }
+
+        draw(ctx) {
+            if (this.isReincarnating) return;
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 10;
+            
+            if (this.imgName && IMAGES[this.imgName] && IMAGES[this.imgName].complete && !this.isHexed) {
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.closePath();
+                ctx.lineWidth = 3; ctx.strokeStyle = this.team === 1 ? '#2ecc71' : '#e74c3c';
+                ctx.stroke(); ctx.clip();
+                ctx.drawImage(IMAGES[this.imgName], -this.radius*1.5, -this.radius*1.5, this.radius*3, this.radius*3);
+            } else {
+                ctx.fillStyle = this.isHexed ? '#8e44ad' : this.color;
+                ctx.lineWidth = 2; ctx.strokeStyle = '#000';
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                
+                if (this.isHexed) { 
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.beginPath(); ctx.arc(-6, -8, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(6, -8, 4, 0, Math.PI * 2); ctx.fill();
+                } else if (!this.isHero && !this.isTower && !this.isRoshan) {
+                    ctx.rotate(this.facing);
+                    ctx.fillStyle = '#222';
+                    ctx.beginPath(); ctx.arc(this.radius/2, -3, 2, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(this.radius/2, 3, 2, 0, Math.PI*2); ctx.fill();
+                }
+            }
+            ctx.restore();
+            this.drawHealthBar(ctx);
+        }
+
+        drawHealthBar(ctx) {
+            let barW = this.radius * 2.5, barH = 6;
+            ctx.fillStyle = '#000'; 
+            ctx.fillRect(this.x - barW/2 - 1, this.y - this.radius - 16, barW + 2, barH + 2); 
+            ctx.fillStyle = this.team === 1 ? '#2ecc71' : (this.team === 2 ? '#c0392b' : '#f39c12'); 
+            ctx.fillRect(this.x - barW/2, this.y - this.radius - 15, barW * (Math.max(0, this.hp) / this.maxHp), barH); 
+        }
+    }
+
+    class Tower extends Entity {
+        constructor(x, y, team) {
+            super(x, y, team, 35, team === 1 ? '#2980b9' : '#c0392b');
+            this.isTower = true;
+            this.maxHp = 1200; this.hp = 1200; 
+            this.damage = 120; // Сильный урон (опасно без раскачки!)
+            this.attackRange = 260; 
+            this.attackCooldown = 1.0;
+        }
+
+        update(dt) {
+            super.update(dt);
+            if (this.attackTimer <= 0) {
+                let enemies = entities.filter(e => e.team !== this.team && !e.dead && !e.isReincarnating);
+                let closest = null, minDist = this.attackRange;
+                for (let e of enemies) {
+                    let d = Math.hypot(e.x - this.x, e.y - this.y);
+                    if (d < minDist) { minDist = d; closest = e; }
+                }
+                if (closest) {
+                    closest.takeDamage(this.damage, this);
+                    particles.push({type: 'tower_shot', x1: this.x, y1: this.y-40, x2: closest.x, y2: closest.y, life: 0.3, maxLife: 0.3, color: this.team === 1 ? '#00ffff' : '#ff0055'});
+                    this.attackTimer = this.attackCooldown;
+                }
+            }
+
+            // Аура регенерации союзным героям в радиусе башни (в 3 раза быстрее)
+            let allies = entities.filter(e => e.team === this.team && e.isHero && !e.dead && !e.isReincarnating);
+            allies.forEach(hero => {
+                if (Math.hypot(hero.x - this.x, hero.y - this.y) <= this.attackRange) {
+                    hero.hp = Math.min(hero.maxHp, hero.hp + 6 * dt);   // 2 * 3 = 6 HP/сек
+                    hero.mana = Math.min(hero.maxMana, hero.mana + 9 * dt); // 3 * 3 = 9 MP/сек
+                    if (Math.random() < 0.1) {
+                        particles.push({type: 'heal_sparkle', x: hero.x + Math.random()*20-10, y: hero.y + Math.random()*20-10, life: 0.5, maxLife: 0.5});
+                    }
+                }
+            });
+        }
+
+        draw(ctx) {
+            // Четкий пунктирный радиус действия и ауры башни
+            ctx.save();
+            ctx.strokeStyle = this.team === 1 ? 'rgba(46, 204, 113, 0.4)' : 'rgba(231, 76, 60, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.attackRange, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            let tColor = this.team === 1 ? '#bdc3c7' : '#34495e';
+            let glow = this.team === 1 ? '#3498db' : '#e74c3c';
+
+            ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(0, 25, 40, 15, 0, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = tColor; ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(-25, 20); ctx.lineTo(25, 20); ctx.lineTo(15, -30); ctx.lineTo(-15, -30); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = '#222';
+            ctx.beginPath(); ctx.moveTo(-18, -30); ctx.lineTo(18, -30); ctx.lineTo(25, -45); ctx.lineTo(-25, -45); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            let floatY = Math.sin(performance.now() / 300) * 5;
+            ctx.shadowColor = glow; ctx.shadowBlur = 20; ctx.fillStyle = glow;
+            ctx.beginPath(); ctx.arc(0, -60 + floatY, 12, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.restore();
+
+            let barW = 60;
+            ctx.fillStyle = '#000'; ctx.fillRect(this.x - barW/2 - 1, this.y - 81, barW + 2, 8);
+            ctx.fillStyle = this.team === 1 ? '#2ecc71' : '#c0392b'; 
+            ctx.fillRect(this.x - barW/2, this.y - 80, barW * (this.hp / this.maxHp), 6);
+        }
+
+        die() {
+            gameActive = false;
+            document.getElementById('gameOver').classList.remove('hidden');
+            let txt = document.getElementById('winnerText');
+            txt.innerText = this.team === 1 ? "ВЫ ПРОИГРАЛИ!" : "ВЫ ПОБЕДИЛИ!";
+            txt.style.color = this.team === 1 ? '#e74c3c' : '#2ecc71';
+        }
+    }
+
+    class Roshan extends Entity {
+        constructor(x, y) {
+            super(x, y, 3, 45, '#555');
+            this.isRoshan = true;
+            this.spawnPos = { x: x, y: y };
+            this.pitRadius = 140; // Ограничение радиуса Pit
+            this.maxHp = 2200; this.hp = 2200; 
+            this.damage = 38; 
+            this.armor = 8;
+            this.speed = 110;
+            this.attackRange = 65; 
+            this.attackCooldown = 1.2; 
+            this.returningHome = false;
+        }
+
+        update(dt) {
+            let distToPitCenter = Math.hypot(this.x - this.spawnPos.x, this.y - this.spawnPos.y);
+
+            // Если Рошан ушел далеко за границы своего логова — он сбрасывает цель и возвращается
+            if (distToPitCenter > this.pitRadius + 30) {
+                this.returningHome = true;
+                this.targetAttack = null;
+            }
+
+            if (this.returningHome) {
+                this.targetMove = { x: this.spawnPos.x, y: this.spawnPos.y };
+                this.hp = Math.min(this.maxHp, this.hp + 150 * dt); // Быстрая регенерация при возврате
+                if (distToPitCenter < 10) {
+                    this.returningHome = false;
+                    this.targetMove = null;
+                }
+            } else {
+                // Поиск целей СТРОГО внутри/около зоны Pit
+                if (!this.targetAttack || this.targetAttack.dead || this.targetAttack.isReincarnating || Math.hypot(this.targetAttack.x - this.spawnPos.x, this.targetAttack.y - this.spawnPos.y) > this.pitRadius + 20) {
+                    let enemies = entities.filter(e => (e.isHero || e.isCreep) && !e.dead && !e.isReincarnating);
+                    let closest = null, minDist = this.pitRadius + 20;
+                    for (let e of enemies) {
+                        let d = Math.hypot(e.x - this.spawnPos.x, e.y - this.spawnPos.y);
+                        if (d < minDist) { minDist = d; closest = e; }
+                    }
+                    this.targetAttack = closest;
+                }
+            }
+
+            super.update(dt);
+        }
+
+        die(source) {
+            this.dead = true;
+            roshanTimer = 180; 
+            
+            if (source && source.team) {
+                teamCreepBuff[source.team] = 1.35;
+                particles.push({type: 'text', text: 'ROSHAN УБИТ! КРИПЫ УСИЛЕНЫ!', x: canvas.width/2, y: canvas.height/2, life: 4, maxLife: 4, color: '#f39c12'});
+            }
+            
+            itemsOnGround.push({ type: 'aegis', x: this.spawnPos.x, y: this.spawnPos.y, radius: 20 });
+            roshanEntity = null;
+        }
+
+        draw(ctx) {
+            ctx.save(); ctx.translate(this.x, this.y);
+            ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(0, 25, 50, 18, 0, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = '#5c4a3d'; ctx.strokeStyle = '#222'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            
+            ctx.fillStyle = '#3d2e24';
+            ctx.beginPath(); ctx.arc(-18, -18, 16, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(18, -18, 16, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = '#ff3300'; ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 12;
+            ctx.beginPath(); ctx.arc(-12, -8, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(12, -8, 5, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+            
+            let barW = 90;
+            ctx.fillStyle = '#000'; ctx.fillRect(this.x - barW/2 - 2, this.y - 65, barW + 4, 12);
+            ctx.fillStyle = '#d35400'; ctx.fillRect(this.x - barW/2, this.y - 63, barW * (this.hp / this.maxHp), 8);
+        }
+    }
+
+    class Creep extends Entity {
+        constructor(x, y, team) {
+            let buff = teamCreepBuff[team];
+            super(x, y, team, 10 * Math.pow(buff, 0.5), team === 1 ? '#3498db' : '#e74c3c');
+            this.maxHp = 150 * buff; this.hp = 150 * buff; 
+            this.damage = 15 * buff; this.speed = 60; this.attackRange = 25; this.isCreep = true;
+            this.targetTower = team === 1 ? botTower : playerTower;
+        }
+        update(dt) {
+            if (!this.targetAttack || this.targetAttack.dead || this.targetAttack.isReincarnating || Math.hypot(this.targetAttack.x - this.x, this.targetAttack.y - this.y) > 200) {
+                let enemies = entities.filter(e => e.team !== this.team && !e.dead && !e.isReincarnating && !e.isRoshan);
+                let closest = null, minDist = 150;
+                for (let e of enemies) {
+                    let d = Math.hypot(e.x - this.x, e.y - this.y);
+                    if (d < minDist) { minDist = d; closest = e; }
+                }
+                if (closest) this.targetAttack = closest;
+                else this.targetMove = {x: this.targetTower.x, y: this.targetTower.y};
+            }
+            super.update(dt);
+        }
+    }
+
+    class Hero extends Entity {
+        constructor(x, y, team, imgName) {
+            super(x, y, team, 20, team === 1 ? '#2ecc71' : '#e74c3c');
+            this.isHero = true; this.imgName = imgName; 
+            this.maxMana = 200; this.mana = 200; this.gold = 300; this.speed = 120;
+            this.respawnTimer = 0; this.spawnPoint = {x, y};
+            this.swordLvl = 0; this.shieldLvl = 0; this.baseDamage = 20; this.baseArmor = 0;
+            this.cds = { q: 0, w: 0, e: 0, r: 0 };
+            
+            this.kills = 0; this.deaths = 0; this.assists = 0;
+            this.inventory = null; 
+            this.targetItem = null;
+            this.pendingCast = null;
+            
+            this.skillTypes = { q: 'point', w: 'point', e: 'point', r: 'point' }; 
+            this.castRanges = { q: 200, w: 200, e: 200, r: 200 };
+            this.maxCds = { q: 5, w: 5, e: 5, r: 30 };
+        }
+
+        updateStats() {
+            this.damage = this.baseDamage + (this.swordLvl * 15);
+            this.armor = this.baseArmor + (this.shieldLvl * 2);
+        }
+
+        update(dt) {
+            if (this.isReincarnating) {
+                this.reincarnationTimer -= dt;
+                if (this.reincarnationTimer <= 0) {
+                    this.isReincarnating = false;
+                    this.hp = this.maxHp; this.mana = this.maxMana;
+                    this.damageTracker.clear();
+                    particles.push({type: 'text', text: 'ВОЗРОЖДЕНИЕ!', x: this.x, y: this.y - 40, life: 2, maxLife: 2, color: '#f1c40f'});
+                }
+                return;
+            }
+
+            if (this.dead) {
+                this.respawnTimer -= dt;
+                if (this.respawnTimer <= 0) {
+                    this.dead = false; this.hp = this.maxHp; this.mana = this.maxMana;
+                    this.x = this.spawnPoint.x; this.y = this.spawnPoint.y;
+                    this.targetMove = null; this.targetAttack = null; this.pendingCast = null;
+                    this.damageTracker.clear(); 
+                }
+                return;
+            }
+
+            this.updateStats();
+            if (this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + 2 * dt);
+            if (this.mana < this.maxMana) this.mana = Math.min(this.maxMana, this.mana + 3 * dt);
+            for (let k in this.cds) if (this.cds[k] > 0) this.cds[k] -= dt;
+
+            if (this.targetItem) {
+                let dx = this.targetItem.x - this.x; let dy = this.targetItem.y - this.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist <= 30) {
+                    if (this.targetItem.type === 'aegis') {
+                        this.inventory = 'aegis';
+                        if (this === player) {
+                            document.getElementById('inventorySlot').style.backgroundImage = `url('${IMAGES.aegis.src}')`;
+                            document.getElementById('inventorySlot').innerText = '';
+                        }
+                    }
+                    itemsOnGround = itemsOnGround.filter(i => i !== this.targetItem);
+                    this.targetItem = null; this.targetMove = null;
+                } else {
+                    this.targetMove = { x: this.targetItem.x, y: this.targetItem.y };
+                }
+            }
+
+            if (this.pendingCast && !this.isHexed) {
+                let p = this.pendingCast;
+                let targetX = p.target ? p.target.x : p.targetX;
+                let targetY = p.target ? p.target.y : p.targetY;
+                let reqRange = this.castRanges[p.key];
+                
+                if (Math.hypot(targetX - this.x, targetY - this.y) <= reqRange) {
+                    this.targetMove = null;
+                    if (p.key === 'q') this.castQ(targetX, targetY, p.target);
+                    if (p.key === 'w') this.castW(targetX, targetY, p.target);
+                    if (p.key === 'e') this.castE(targetX, targetY, p.target);
+                    if (p.key === 'r') this.castR(targetX, targetY, p.target);
+                    this.pendingCast = null;
+                } else {
+                    this.targetMove = { x: targetX, y: targetY };
+                    if (p.target && (p.target.dead || p.target.isReincarnating)) this.pendingCast = null; 
+                }
+            }
+            super.update(dt);
+        }
+        
+        castQ(tx, ty, target) {} castW(tx, ty, target) {} castE(tx, ty, target) {} castR(tx, ty, target) {}
+    }
+
+    class Pudge extends Hero {
+        constructor(x, y, team) { 
+            super(x, y, team, 'pudge'); 
+            this.maxHp = 600; this.hp = 600; this.attackRange = 50; 
+            this.rotActive = false; 
+            this.maxCds = { q: 10, w: 1, e: 0, r: 20 }; 
+            this.skillTypes = { q: 'point', w: 'no_target', e: 'passive', r: 'unit' }; 
+            this.castRanges = { q: 500, w: 0, e: 0, r: 60 }; 
+        }
+        update(dt) {
+            super.update(dt);
+            if (this.dead || this.isReincarnating || this.isHexed) { this.rotActive = false; }
+            if (this.rotActive) {
+                this.takeDamage(15 * dt, this);
+                entities.forEach(e => {
+                    if (e !== this && !e.dead && !e.isReincarnating && Math.hypot(e.x - this.x, e.y - this.y) < 100) {
+                        e.takeDamage(30 * dt, this);
+                    }
+                });
+                particles.push({type: 'rot', x: this.x, y: this.y, life: 0.1, maxLife: 0.1, radius: 100});
+            }
+        }
+        castQ(tx, ty) {
+            if(this.mana < 30 || this.cds.q > 0) return;
+            this.mana -= 30; this.cds.q = this.maxCds.q;
+            let angle = Math.atan2(ty - this.y, tx - this.x);
+            let dist = 400;
+            let hx = this.x + Math.cos(angle)*dist;
+            let hy = this.y + Math.sin(angle)*dist;
+            particles.push({type: 'line', x1: this.x, y1: this.y, x2: hx, y2: hy, life: 0.3, maxLife: 0.3, color: '#aaa', width: 4});
+            
+            let closest = null; let md = 40;
+            entities.forEach(e => {
+                if(e !== this && !e.dead && !e.isTower && !e.isReincarnating) {
+                    let d = Math.hypot(e.x - hx, e.y - hy);
+                    if(d < md) { md = d; closest = e; }
+                }
+            });
+            if(closest) {
+                closest.x = this.x + Math.cos(angle)*30;
+                closest.y = this.y + Math.sin(angle)*30;
+                closest.takeDamage(60, this);
+            }
+        }
+        castW() {
+            if(this.cds.w > 0) return;
+            this.cds.w = this.maxCds.w;
+            this.rotActive = !this.rotActive;
+        }
+        castR(tx, ty, target) {
+            if(!target || this.mana < 100 || this.cds.r > 0) return;
+            this.mana -= 100; this.cds.r = this.maxCds.r;
+            target.takeDamage(150, this);
+            target.hexTimer = 2.0; target.isHexed = true;
+            particles.push({type: 'blood', x: target.x, y: target.y, life: 2.0, maxLife: 2.0});
+        }
+    }
+
+    class Lion extends Hero {
+        constructor(x, y, team) { 
+            super(x, y, team, 'lion'); 
+            this.maxHp = 400; this.hp = 400; this.attackRange = 150; 
+            this.maxCds = { q: 8, w: 10, e: 0, r: 40 }; 
+            this.skillTypes = { q: 'point', w: 'unit', e: 'passive', r: 'unit' }; 
+            this.castRanges = { q: 300, w: 250, e: 0, r: 350 }; 
+        }
+        castQ(tx, ty) {
+            if(this.mana < 50 || this.cds.q > 0) return;
+            this.mana -= 50; this.cds.q = this.maxCds.q;
+            let angle = Math.atan2(ty - this.y, tx - this.x);
+            particles.push({type: 'spike', x: this.x, y: this.y, angle: angle, life: 0.5, maxLife: 0.5});
+            entities.forEach(e => {
+                if(e.team !== this.team && !e.dead && !e.isTower) {
+                    let d = Math.hypot(e.x - this.x, e.y - this.y);
+                    let a = Math.atan2(e.y - this.y, e.x - this.x);
+                    if(d < 300 && Math.abs(a - angle) < 0.2) {
+                        e.takeDamage(80, this);
+                        e.isHexed = true; e.hexTimer = 1.0;
+                    }
+                }
+            });
+        }
+        castW(tx, ty, target) {
+            if(!target || this.mana < 50 || this.cds.w > 0) return;
+            this.mana -= 50; this.cds.w = this.maxCds.w;
+            target.isHexed = true; target.hexTimer = 2.5;
+            particles.push({type: 'text', text: 'HEX!', x: target.x, y: target.y - 20, life: 1, maxLife: 1, color: '#8e44ad'});
+        }
+        castR(tx, ty, target) {
+            if(!target || this.mana < 150 || this.cds.r > 0) return;
+            this.mana -= 150; this.cds.r = this.maxCds.r;
+            target.takeDamage(250, this);
+            particles.push({type: 'line', x1: this.x, y1: this.y, x2: target.x, y2: target.y, life: 0.4, maxLife: 0.4, color: '#e74c3c', width: 8});
+        }
+    }
+
+    class Juggernaut extends Hero {
+        constructor(x, y, team) { 
+            super(x, y, team, 'juggernaut'); 
+            this.maxHp = 500; this.hp = 500; this.attackRange = 50; 
+            this.spinTimer = 0;
+            this.maxCds = { q: 12, w: 20, e: 0, r: 50 }; 
+            this.skillTypes = { q: 'no_target', w: 'point', e: 'passive', r: 'unit' }; 
+            this.castRanges = { q: 0, w: 200, e: 0, r: 250 }; 
+        }
+        update(dt) {
+            super.update(dt);
+            if(this.spinTimer > 0) {
+                this.spinTimer -= dt;
+                entities.forEach(e => {
+                    if (e.team !== this.team && !e.dead && !e.isTower && Math.hypot(e.x - this.x, e.y - this.y) < 120) {
+                        e.takeDamage(40 * dt, this);
+                    }
+                });
+                particles.push({type: 'spin', x: this.x, y: this.y, life: 0.1, maxLife: 0.1, radius: 120});
+            }
+        }
+        castQ() {
+            if(this.mana < 40 || this.cds.q > 0) return;
+            this.mana -= 40; this.cds.q = this.maxCds.q;
+            this.spinTimer = 4.0;
+        }
+        castW(tx, ty) {
+            if(this.mana < 60 || this.cds.w > 0) return;
+            this.mana -= 60; this.cds.w = this.maxCds.w;
+            particles.push({type: 'ward', x: tx, y: ty, life: 5.0, maxLife: 5.0, team: this.team});
+        }
+        castR(tx, ty, target) {
+            if(!target || this.mana < 100 || this.cds.r > 0) return;
+            this.mana -= 100; this.cds.r = this.maxCds.r;
+            let jumps = 5;
+            let currentTarget = target;
+            let interval = setInterval(() => {
+                if(jumps <= 0 || !currentTarget || currentTarget.dead) { clearInterval(interval); return; }
+                this.x = currentTarget.x + 10; this.y = currentTarget.y + 10;
+                currentTarget.takeDamage(80, this);
+                particles.push({type: 'slash', x: currentTarget.x, y: currentTarget.y, life: 0.2, maxLife: 0.2});
+                
+                let next = null; let md = 250;
+                entities.forEach(e => {
+                    if(e.team !== this.team && !e.dead && !e.isTower) {
+                        let d = Math.hypot(e.x - this.x, e.y - this.y);
+                        if(d < md) { md = d; next = e; }
+                    }
+                });
+                currentTarget = next;
+                jumps--;
+            }, 200);
+        }
+    }
+
+    function createHero(name, x, y, team) {
+        if(name === 'pudge') return new Pudge(x, y, team);
+        if(name === 'lion') return new Lion(x, y, team);
+        if(name === 'juggernaut') return new Juggernaut(x, y, team);
+        return new Hero(x, y, team, name);
+    }
+
+    function startGame(selectedHero) {
+        document.getElementById('heroSelect').classList.add('hidden');
+        document.getElementById('ui').style.display = 'flex';
+        document.getElementById('kdaDisplay').style.display = 'block';
+        document.getElementById('gameTimerDisplay').style.display = 'block';
+        document.getElementById('enemyInfoContainer').style.display = 'flex';
+        canvas.style.display = 'block';
+
+        entities = []; particles = []; itemsOnGround = []; matchTime = 0;
+        roshanTimer = 180; roshanEntity = null;
+        generateTrees();
+
+        playerTower = new Tower(100, canvas.height/2, 1);
+        botTower = new Tower(canvas.width - 100, canvas.height/2, 2);
+
+        player = createHero(selectedHero, 150, canvas.height/2, 1);
+        
+        let bots = ['pudge', 'lion', 'juggernaut'];
+        let botHero = bots[Math.floor(Math.random() * bots.length)];
+        bot = createHero(botHero, canvas.width - 150, canvas.height/2, 2);
+
+        lastTime = performance.now();
+        gameActive = true;
+        requestAnimationFrame(gameLoop);
+    }
+
+    function spawnCreeps() {
+        new Creep(150, canvas.height/2 - 20, 1);
+        new Creep(150, canvas.height/2 + 20, 1);
+        new Creep(canvas.width - 150, canvas.height/2 - 20, 2);
+        new Creep(canvas.width - 150, canvas.height/2 + 20, 2);
+    }
+
+    function buyItem(type) {
+        let price = type === 'sword' ? 100 + player.swordLvl*50 : 100 + player.shieldLvl*50;
+        if(player.gold >= price) {
+            player.gold -= price;
+            if(type === 'sword') player.swordLvl++;
+            if(type === 'shield') player.shieldLvl++;
+            document.getElementById('swordLvlText').innerText = `Ур. ${player.swordLvl}`;
+            document.getElementById('shieldLvlText').innerText = `Ур. ${player.shieldLvl}`;
+        }
+    }
+
+    function botAI(dt) {
+        if(bot.dead || bot.isReincarnating) return;
+        
+        let swordCost = 100 + bot.swordLvl*50;
+        let shieldCost = 100 + bot.shieldLvl*50;
+        if(bot.gold >= swordCost) { bot.gold -= swordCost; bot.swordLvl++; }
+        else if(bot.gold >= shieldCost) { bot.gold -= shieldCost; bot.shieldLvl++; }
+        
+        // Стата бота
+        document.getElementById('enemyKdaText').innerText = `K/D/A: ${bot.kills} / ${bot.deaths} / ${bot.assists}`;
+        document.getElementById('enemySwordText').innerText = `⚔️ Меч: Ур. ${bot.swordLvl}`;
+        document.getElementById('enemyShieldText').innerText = `🛡️ Щит: Ур. ${bot.shieldLvl}`;
+
+        if(bot.hp < bot.maxHp * 0.3) {
+            bot.targetMove = {x: botTower.x, y: botTower.y};
+            bot.targetAttack = null;
+        } else {
+            let enemies = entities.filter(e => e.team === 1 && !e.dead && !e.isReincarnating);
+            let closest = null, minDist = 400;
+            for(let e of enemies) {
+                let d = Math.hypot(e.x - bot.x, e.y - bot.y);
+                if(d < minDist) { minDist = d; closest = e; }
+            }
+            
+            if(closest) {
+                bot.targetAttack = closest;
+                if(Math.random() < 0.01) {
+                    let skills = Object.keys(bot.cds).filter(k => bot.cds[k] <= 0);
+                    if(skills.length > 0) {
+                        let sk = skills[Math.floor(Math.random() * skills.length)];
+                        bot.pendingCast = { key: sk, targetX: closest.x, targetY: closest.y, target: closest };
+                    }
+                }
+            } else {
+                bot.targetMove = {x: canvas.width/2, y: canvas.height/2};
+                bot.targetAttack = null;
+            }
+        }
+    }
+
+    function drawParticles(ctx, dt) {
+        for(let i=particles.length-1; i>=0; i--) {
+            let p = particles[i];
+            p.life -= dt;
+            if(p.life <= 0) { particles.splice(i, 1); continue; }
+            
+            ctx.save();
+            ctx.globalAlpha = p.life / p.maxLife;
+            if(p.type === 'line') {
+                ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2);
+                ctx.strokeStyle = p.color; ctx.lineWidth = p.width; ctx.stroke();
+            } else if (p.type === 'text') {
+                ctx.fillStyle = p.color; ctx.font = "bold 20px Arial";
+                ctx.fillText(p.text, p.x - 20, p.y - (p.maxLife - p.life)*30);
+            } else if (p.type === 'rot') {
+                ctx.fillStyle = 'rgba(100, 255, 100, 0.2)';
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill();
+            } else if (p.type === 'spin') {
+                ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill();
+            } else if (p.type === 'blood') {
+                ctx.fillStyle = '#c0392b';
+                ctx.beginPath(); ctx.arc(p.x + Math.random()*20-10, p.y + Math.random()*20-10, 5, 0, Math.PI*2); ctx.fill();
+            } else if (p.type === 'slash') {
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(p.x-20, p.y-20); ctx.lineTo(p.x+20, p.y+20); ctx.stroke();
+            } else if (p.type === 'spike') {
+                ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+                ctx.fillStyle = '#8e44ad'; ctx.fillRect(0, -15, 300 * (1 - p.life/p.maxLife), 30);
+            } else if (p.type === 'ward') {
+                ctx.fillStyle = p.team === 1 ? '#2ecc71' : '#e74c3c';
+                ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI*2); ctx.fill();
+                entities.forEach(e => {
+                    if(e.team === p.team && !e.dead && Math.hypot(e.x - p.x, e.y - p.y) < 200) {
+                        e.hp = Math.min(e.maxHp, e.hp + 10 * dt);
+                    }
+                });
+                ctx.strokeStyle = `rgba(46, 204, 113, ${p.life%0.5 * 2})`; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 200, 0, Math.PI*2); ctx.stroke();
+            } else if (p.type === 'aegis_revive') {
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath(); ctx.arc(p.x, p.y, 30 + Math.sin(p.life*10)*10, 0, Math.PI*2); ctx.fill();
+            } else if (p.type === 'tower_shot') {
+                let prog = 1 - (p.life/p.maxLife);
+                let cx = p.x1 + (p.x2 - p.x1)*prog;
+                let cy = p.y1 + (p.y2 - p.y1)*prog;
+                ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 10;
+                ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.fill();
+            } else if (p.type === 'heal_sparkle') {
+                ctx.fillStyle = '#2ecc71';
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+        }
+    }
+
+    function gameLoop(timestamp) {
+        if (!gameActive) return;
+        let dt = (timestamp - lastTime) / 1000;
+        lastTime = timestamp;
+        if(dt > 0.1) dt = 0.1;
+
+        matchTime += dt;
+        let m = Math.floor(matchTime / 60);
+        let s = Math.floor(matchTime % 60);
+        document.getElementById('gameTimerDisplay').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+
+        creepTimer -= dt;
+        if(creepTimer <= 0) { spawnCreeps(); creepTimer = 15; }
+
+        if(!roshanEntity) {
+            roshanTimer -= dt;
+            if(roshanTimer <= 0) { 
+                roshanEntity = new Roshan(canvas.width/2, canvas.height - 90); 
+                particles.push({type: 'text', text: 'ROSHAN ПОЯВИЛСЯ!', x: canvas.width/2, y: canvas.height/2, life: 3, maxLife: 3, color: '#e74c3c'});
+            }
+        }
+
+        botAI(dt);
+
+        entities = entities.filter(e => !e.dead || e.isHero || e.isTower || e.isReincarnating);
+        entities.forEach(e => e.update(dt));
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawMap(ctx);
+        
+        itemsOnGround.forEach(i => {
+            if(i.type === 'aegis' && IMAGES.aegis.complete) {
+                ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
+                ctx.drawImage(IMAGES.aegis, i.x - i.radius, i.y - i.radius, i.radius*2, i.radius*2);
+                ctx.shadowBlur = 0;
+            }
+        });
+
+        entities.sort((a, b) => a.y - b.y).forEach(e => e.draw(ctx));
+        drawParticles(ctx, dt);
+
+        document.getElementById('hpDisplay').innerText = `HP: ${Math.floor(player.hp)}/${player.maxHp}`;
+        document.getElementById('manaDisplay').innerText = `MP: ${Math.floor(player.mana)}/${player.maxMana}`;
+        document.getElementById('goldDisplay').innerText = `💰 ${Math.floor(player.gold)}`;
+        document.getElementById('statsDisplay').innerText = `Урон: ${player.damage} | Броня: ${player.armor}`;
+        document.getElementById('kdaText').innerText = `${player.kills} / ${player.deaths} / ${player.assists}`;
+
+        let respawnBox = document.getElementById('respawnOverlay');
+        if(player.dead) {
+            respawnBox.style.display = 'block';
+            document.getElementById('respawnTimerText').innerText = `ВОЗРОЖДЕНИЕ ЧЕРЕЗ: ${Math.ceil(player.respawnTimer)} СЕК`;
+        } else {
+            respawnBox.style.display = 'none';
+        }
+
+        ['q','w','e','r'].forEach(k => {
+            let cdEl = document.getElementById(`cd-${k}`);
+            if(player.cds[k] > 0) {
+                cdEl.style.opacity = 1;
+                cdEl.innerText = Math.ceil(player.cds[k]);
+            } else {
+                cdEl.style.opacity = 0;
+            }
+        });
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener('mousedown', e => {
+        if (!gameActive || player.dead || player.isReincarnating || player.isHexed) return;
+        let rect = canvas.getBoundingClientRect();
+        let mx = e.clientX - rect.left; let my = e.clientY - rect.top;
+
+        if (activeSkill) {
+            let target = null;
+            if(player.skillTypes[activeSkill] === 'unit') {
+                entities.forEach(ent => {
+                    if (ent !== player && !ent.dead && Math.hypot(ent.x - mx, ent.y - my) < ent.radius * 2) target = ent;
+                });
+                if(!target) { cancelSkill(); return; }
+            }
+            player.pendingCast = { key: activeSkill, targetX: mx, targetY: my, target: target };
+            cancelSkill();
+            return;
+        }
+
+        if (e.button === 2) {
+            let target = null;
+            let itemTarget = null;
+
+            itemsOnGround.forEach(i => {
+                if(Math.hypot(i.x - mx, i.y - my) < i.radius * 2) itemTarget = i;
+            });
+
+            if(itemTarget) {
+                player.targetItem = itemTarget;
+                player.targetAttack = null;
+                player.pendingCast = null;
+                return;
+            }
+
+            entities.forEach(ent => {
+                if (ent.team !== player.team && !ent.dead && Math.hypot(ent.x - mx, ent.y - my) < ent.radius * 2) target = ent;
+            });
+
+            if (target) { player.targetAttack = target; player.targetMove = null; }
+            else { player.targetMove = { x: mx, y: my }; player.targetAttack = null; }
+            player.pendingCast = null;
+            player.targetItem = null;
+            
+            particles.push({type: 'line', x1: mx-5, y1: my-5, x2: mx+5, y2: my+5, life: 0.2, maxLife: 0.2, color: target ? '#e74c3c' : '#2ecc71', width: 2});
+            particles.push({type: 'line', x1: mx+5, y1: my-5, x2: mx-5, y2: my+5, life: 0.2, maxLife: 0.2, color: target ? '#e74c3c' : '#2ecc71', width: 2});
+        }
+    });
+
+    window.addEventListener('keydown', e => {
+        if (!gameActive || player.dead || player.isReincarnating || player.isHexed) return;
+        let key = e.key.toLowerCase();
+        if (['q', 'w', 'e', 'r'].includes(key)) {
+            prepareSkill(key);
+        }
+    });
+
+    function prepareSkill(key) {
+        if(player.cds[key] > 0) return;
+        if(player.skillTypes[key] === 'no_target' || player.skillTypes[key] === 'passive') {
+            if(key === 'q') player.castQ();
+            if(key === 'w') player.castW();
+            if(key === 'e') player.castE();
+            if(key === 'r') player.castR();
+            return;
+        }
+        activeSkill = key;
+        document.querySelectorAll('.skill').forEach(el => el.classList.remove('active-target'));
+        document.getElementById(`ui-${key}`).classList.add('active-target');
+        canvas.style.cursor = 'crosshair';
+    }
+
+    function cancelSkill() {
+        activeSkill = null;
+        document.querySelectorAll('.skill').forEach(el => el.classList.remove('active-target'));
+        canvas.style.cursor = 'default';
+    }
+</script>
+</body>
+</html>

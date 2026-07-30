@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitaliy Ten | Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(17, 24, 39, 0.4);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15), transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(231, 76, 60, 0.1), transparent 30%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* --- 1. HERO SECTION --- */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #ffffff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-text {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 1rem;
+        }
+
+        .hero-text.korean {
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Кнопка перехода на проекты прямо на главном экране */
+        .btn-projects {
+            display: inline-flex;
+            align-items: center;
+            padding: 16px 32px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-projects:hover {
+            transform: translateY(-3px);
+            background: var(--primary-hover);
+            box-shadow: 0 15px 25px -10px rgba(99, 102, 241, 0.8);
+        }
+
+        .btn-projects svg {
+            margin-left: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-projects:hover svg {
+            transform: translateX(5px);
+        }
+
+        /* --- ОБЩИЕ СТИЛИ СЕКЦИЙ --- */
+        section {
+            padding: 6rem 0;
+            border-top: 1px solid var(--card-border);
+        }
+
+        h2.section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: #fff;
+        }
+
+        /* Двухколоночный макет для Английского/Корейского */
+        .dual-lang-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .lang-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- НАВЫКИ --- */
+        .skills-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .skill-tag {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 1.1rem;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .skill-tag:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .dual-lang-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 1. ГЛАВНЫЙ ЭКРАН (HERO SECTION) -->
+        <header class="hero">
+            <h1>Hi, I'm Vitaliy Ten.</h1>
+            
+            <p class="hero-text">
+                A 16-year-old developer from South Korea. I blend logic and creativity to build websites, apps, and games.
+            </p>
+            <p class="hero-text korean">
+                안녕하세요, 텐 비탈리(Ten Vitaliy)입니다.<br>
+                웹사이트, 앱, 게임을 만들며 논리와 창의성을 결합하는 16세 학생 개발자입니다.
+            </p>
+
+            <!-- ТА САМАЯ КНОПКА ПРЯМО НА ГЛАВНОМ ЭКРАНЕ -->
+<a href="projects.html" class="btn-projects">
+    View My Projects
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+</a>
+        </header>
+
+        <!-- 2. ОБО МНЕ (ABOUT ME) -->
+        <section id="about">
+            <h2 class="section-title">About Me</h2>
+            <div class="dual-lang-grid">
+                <!-- English -->
+                <div class="glass-card">
+                    <span class="lang-badge">English</span>
+                    <p>
+                        I am currently a 2nd-year student at Onyang High School (온양고). My journey into programming started in childhood. I've always been fascinated by the pure logic of mathematics and dedicated a lot of time to advanced math and English classes. 
+                    </p>
+                    <br>
+                    <p>
+                        When my older brother mentioned his dream of becoming a programmer, something clicked in my mind. That childhood inspiration grew into a serious passion. My goal is to study Computer Science at university, with a focus on web and application development, as well as game design. I love the process of writing code and seeing my ideas come to life on the screen.
+                    </p>
+                </div>
+                <!-- Korean -->
+                <div class="glass-card">
+                    <span class="lang-badge">한국어</span>
+                    <p>
+                        저는 현재 온양고등학교 2학년에 재학 중입니다. 프로그래밍을 향한 제 여정은 어린 시절부터 시작되었습니다. 저는 항상 수학의 논리적인 면에 매료되어 수학 심화 학습과 영어 공부에 많은 시간을 투자했습니다. 
+                    </p>
+                    <br>
+                    <p>
+                        형이 프로그래머가 되고 싶다고 말했을 때, 제 마음속에서도 무언가 확신이 생겼고, 그 어린 시절의 영감은 이제 저의 가장 큰 열정이 되었습니다. 저의 목표는 대학에서 컴퓨터 공학을 전공하여 웹과 앱 개발, 그리고 게임 디자인을 깊이 있게 배우는 것입니다. 코드를 작성하고 제 아이디어가 화면에 구현되는 과정을 정말 사랑합니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. НАВЫКИ (SKILLS) -->
+        <section id="skills">
+            <h2 class="section-title">Tech Stack & Skills</h2>
+            <div class="skills-wrapper">
+                <div class="skill-tag">HTML5</div>
+                <div class="skill-tag">CSS3</div>
+                <div class="skill-tag">JavaScript</div>
+                <div class="skill-tag">Web / Vibe Coding</div>
+                <div class="skill-tag">🇬🇧 English</div>
+                <div class="skill-tag">🇰🇷 Korean</div>
+                <div class="skill-tag">🇷🇺 Russian</div>
+            </div>
+        </section>
+
+        <!-- 4. ЖИЗНЬ ВНЕ КОДА (BEYOND CODE) -->
+        <section id="hobbies">
+            <h2 class="section-title">Beyond Code</h2>
+            <div class="dual-lang-grid">
+                <!-- English -->
+                <div class="glass-card">
+                    <span class="lang-badge">English</span>
+                    <p>
+                        When I’m not coding, I stay active. I love basketball and competed in mid-level regional tournaments during middle school, which taught me teamwork and resilience.
+                    </p>
+                    <br>
+                    <p>
+                        I am also a huge music enthusiast. My playlists range from indie jazz (Laufey, beabadoobee, Clairo, Faye Webster) to alternative genres. My next personal goal is to learn to play the guitar and piano so I can play and sing my favorite songs during my coding breaks.
+                    </p>
+                </div>
+                <!-- Korean -->
+                <div class="glass-card">
+                    <span class="lang-badge">한국어</span>
+                    <p>
+                        코딩을 하지 않을 때는 활동적인 시간을 보냅니다. 농구를 매우 좋아하며, 중학교 때는 지역 농구 대회에 출전하며 팀워크와 끈기를 배웠습니다.
+                    </p>
+                    <br>
+                    <p>
+                        또한 저는 음악을 아주 좋아합니다. 인디 재즈(Laufey, beabadoobee, Clairo, Faye Webster)부터 다양한 대안 장르까지 즐겨 듣습니다. 코딩 중간중간 휴식을 취할 때 제가 좋아하는 노래를 직접 연주하고 부를 수 있도록 기타와 피아노를 배우는 것이 제 또 다른 목표입니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>

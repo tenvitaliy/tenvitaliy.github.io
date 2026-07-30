@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyVerse - Personal Study Assistant & Flashcards</title>
+  <meta name="description" content="A powerful personal study assistant featuring lesson tracking, Pomodoro timer, deadlines calendar, and interactive 3D flashcards.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- FontAwesome Icons for rich UI -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation Header -->
+    <header class="main-header">
+      <div class="logo-group" id="btnLogoHome">
+        <div class="logo-icon">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <h1 class="logo-title">StudyVerse</h1>
+      </div>
+      
+      <div class="header-stats">
+        <div class="stat-pill">
+          <i class="fa-solid fa-book-open" style="color: var(--primary);"></i>
+          <span>Lessons: <strong id="statLessonsCount">0</strong></span>
+        </div>
+        <div class="stat-pill">
+          <i class="fa-solid fa-layer-group" style="color: var(--accent-cyan);"></i>
+          <span>Decks: <strong id="statDecksCount">0</strong></span>
+        </div>
+        <div class="stat-pill">
+          <i class="fa-solid fa-clock" style="color: var(--accent-amber);"></i>
+          <span>Deadlines: <strong id="statDeadlinesCount">0</strong></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dashboard View -->
+    <main id="dashboardView" class="view-section active">
+      <div class="dashboard-grid">
+        <!-- Lessons Section -->
+        <section class="lessons-container">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="fa-solid fa-shapes" style="color: var(--primary);"></i>
+              My Subjects & Lessons
+            </h2>
+            <button class="btn btn-primary" id="btnOpenAddLessonModal">
+              <i class="fa-solid fa-plus"></i> Add Subject
+            </button>
+          </div>
+          
+          <div class="lessons-grid" id="lessonsGrid">
+            <!-- Dynamic lesson cards render here -->
+          </div>
+        </section>
+
+        <!-- Pomodoro Timer Widget -->
+        <aside class="pomodoro-sidebar">
+          <div class="pomodoro-card">
+            <h3 class="section-title" style="margin-bottom: 1.25rem; justify-content: center;">
+              <i class="fa-solid fa-stopwatch" style="color: var(--accent-pink);"></i>
+              Pomodoro Focus
+            </h3>
+            
+            <div class="pomo-mode-selector">
+              <button class="pomo-mode-btn active" data-mode="work">Focus (25m)</button>
+              <button class="pomo-mode-btn" data-mode="shortBreak">Short Break (5m)</button>
+              <button class="pomo-mode-btn" data-mode="longBreak">Long Break (15m)</button>
+            </div>
+
+            <div class="timer-display-container">
+              <svg class="timer-svg" viewBox="0 0 200 200">
+                <defs>
+                  <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#6366f1" />
+                    <stop offset="100%" stop-color="#ec4899" />
+                  </linearGradient>
+                </defs>
+                <circle class="timer-circle-bg" cx="100" cy="100" r="90" />
+                <circle class="timer-circle-progress" id="timerProgress" cx="100" cy="100" r="90" />
+              </svg>
+              <div class="timer-time-text" id="timerDisplay">25:00</div>
+            </div>
+
+            <div class="timer-controls">
+              <button class="btn btn-primary" id="btnTimerStartPause">
+                <i class="fa-solid fa-play" id="iconTimerState"></i> <span id="textTimerState">Start</span>
+              </button>
+              <button class="btn btn-secondary" id="btnTimerReset">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- Lesson Detail View -->
+    <section id="lessonView" class="view-section">
+      <div class="back-bar">
+        <button class="btn btn-secondary" id="btnBackToDashboard">
+          <i class="fa-solid fa-arrow-left"></i> Back to Subjects
+        </button>
+        <button class="btn btn-danger" id="btnDeleteLesson">
+          <i class="fa-solid fa-trash"></i> Delete Subject
+        </button>
+      </div>
+
+      <div class="lesson-header-banner">
+        <div>
+          <h2 class="lesson-detail-title" id="currentLessonTitle">Subject Name</h2>
+          <p class="lesson-subhead" id="currentLessonMeta">0 Flashcard Decks • 0 Upcoming Deadlines</p>
+        </div>
+        <button class="btn btn-primary" id="btnOpenCreateDeckModal">
+          <i class="fa-solid fa-plus"></i> New Flashcard Deck
+        </button>
+      </div>
+
+      <div class="lesson-view-grid">
+        <!-- Deadlines Panel -->
+        <aside class="panel">
+          <h3 class="panel-title">
+            <span><i class="fa-regular fa-calendar-check" style="color: var(--accent-amber);"></i> Deadlines & Exam Dates</span>
+          </h3>
+
+          <form id="formAddDeadline" class="deadline-form">
+            <input type="text" id="inputDeadlineTitle" class="form-input" placeholder="e.g. Midterm Exam, Essay Due" required>
+            <input type="date" id="inputDeadlineDate" class="form-input" required>
+            <button type="submit" class="btn btn-secondary" style="width: 100%;">
+              <i class="fa-solid fa-calendar-plus"></i> Save Deadline
+            </button>
+          </form>
+
+          <div class="deadline-list" id="deadlineList">
+            <!-- Dynamic deadlines -->
+          </div>
+        </aside>
+
+        <!-- Flashcard Decks List -->
+        <main class="panel">
+          <h3 class="panel-title">
+            <span><i class="fa-solid fa-clone" style="color: var(--primary);"></i> Flashcard Decks</span>
+          </h3>
+          <div class="decks-grid" id="decksGrid">
+            <!-- Dynamic decks cards -->
+          </div>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <!-- Study Overlay (3D Card Review Mode) -->
+  <div class="study-overlay" id="studyOverlay">
+    <div class="study-header">
+      <div class="study-title-group">
+        <h3 id="studyDeckTitle">Deck Title</h3>
+        <div class="study-progress-bar">
+          <div class="study-progress-fill" id="studyProgressFill"></div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-icon-only" id="btnCloseStudy">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="study-body">
+      <div class="flashcard-3d-scene" id="flashcardScene">
+        <div class="flashcard-inner">
+          <!-- Front Face -->
+          <div class="flashcard-face flashcard-front">
+            <span class="flashcard-face-tag">Question / Front</span>
+            <p class="flashcard-text" id="flashcardFrontText">Question prompt goes here</p>
+            <span class="flashcard-hint"><i class="fa-solid fa-hand-pointer"></i> Click card or press Space to flip</span>
+          </div>
+          <!-- Back Face -->
+          <div class="flashcard-face flashcard-back">
+            <span class="flashcard-face-tag" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc;">Answer / Back</span>
+            <p class="flashcard-text" id="flashcardBackText">Answer content goes here</p>
+            <span class="flashcard-hint"><i class="fa-solid fa-rotate-left"></i> Click card or press Space to flip</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="study-controls">
+        <button class="btn btn-secondary" id="btnStudyPrev">
+          <i class="fa-solid fa-chevron-left"></i> Previous
+        </button>
+        <button class="btn btn-primary" id="btnStudyFlip">
+          <i class="fa-solid fa-arrows-rotate"></i> Flip Card
+        </button>
+        <button class="btn btn-secondary" id="btnStudyNext">
+          Next <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+      <div style="margin-top: 1rem; color: var(--text-muted); font-size: 0.85rem;" id="studyCounterText">
+        Card 1 of 10
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Lesson -->
+  <div class="modal-backdrop" id="modalAddLesson">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Add New Subject</h3>
+        <button class="modal-close" data-close-modal="modalAddLesson">&times;</button>
+      </div>
+      <form id="formAddLesson">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Subject / Lesson Name</label>
+          <input type="text" id="inputLessonName" class="form-input" placeholder="e.g. World History, Calculus II, Organic Chemistry" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="modalAddLesson">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Subject</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Create Deck -->
+  <div class="modal-backdrop" id="modalCreateDeck">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Flashcard Deck</h3>
+        <button class="modal-close" data-close-modal="modalCreateDeck">&times;</button>
+      </div>
+      <form id="formCreateDeck">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Deck Name</label>
+          <input type="text" id="inputDeckName" class="form-input" placeholder="e.g. Chapter 1 Vocabulary, Formulas & Rules" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="modalCreateDeck">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Deck</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Manage Deck Cards -->
+  <div class="modal-backdrop" id="modalManageCards">
+    <div class="modal-content" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="manageCardsDeckTitle">Manage Cards</h3>
+        <button class="modal-close" data-close-modal="modalManageCards">&times;</button>
+      </div>
+
+      <!-- Add New Card Form -->
+      <form id="formAddCard" style="background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.25rem;">
+        <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--primary);">Add New Flashcard</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <input type="text" id="inputCardFront" class="form-input" placeholder="Front (Question/Term)" required>
+          <input type="text" id="inputCardBack" class="form-input" placeholder="Back (Answer/Definition)" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          <i class="fa-solid fa-plus"></i> Add Flashcard
+        </button>
+      </form>
+
+      <!-- Existing Cards List -->
+      <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">Cards in Deck</h4>
+      <div class="cards-modal-list" id="cardsModalList">
+        <!-- Dynamic card rows -->
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="modalManageCards">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
